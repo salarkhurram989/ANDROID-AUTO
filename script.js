@@ -17,40 +17,15 @@ function updateInstallUI(){
     installBtn.textContent=deferredInstallPrompt?"Install":"Add to Home";
   }
 }
-window.addEventListener("beforeinstallprompt",e=>{
-  e.preventDefault();
-  deferredInstallPrompt=e;
-  updateInstallUI();
-});
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstallPrompt=e;updateInstallUI()});
 installBtn.onclick=async()=>{
-  if(deferredInstallPrompt){
-    deferredInstallPrompt.prompt();
-    try{await deferredInstallPrompt.userChoice}catch(e){}
-    deferredInstallPrompt=null;
-    updateInstallUI();
-    return;
-  }
-  show("Install AutoDash","<p><b>Android Chrome:</b> tap the browser <b>⋮</b> menu, then choose <b>Add to Home screen</b> or <b>Install app</b>.</p><p>After installing, launch AutoDash from your home-screen icon for the fullscreen app experience.</p>");
+  if(deferredInstallPrompt){deferredInstallPrompt.prompt();try{await deferredInstallPrompt.userChoice}catch(e){}deferredInstallPrompt=null;updateInstallUI();return}
+  show("Install AutoDash","<p><b>Android Chrome:</b> tap <b>⋮</b> → <b>Add to Home screen</b> or <b>Install app</b>.</p><p>Then open AutoDash from its home-screen icon.</p>");
 };
-window.addEventListener("appinstalled",()=>{
-  deferredInstallPrompt=null;
-  updateInstallUI();
-});
+window.addEventListener("appinstalled",()=>{deferredInstallPrompt=null;updateInstallUI()});
 updateInstallUI();
 
-if("serviceWorker" in navigator){
-  window.addEventListener("load",async()=>{
-    try{
-      const registration=await navigator.serviceWorker.register("./sw.js",{scope:"./"});
-      await registration.update();
-      $("#systemState").textContent=isStandalone()?"INSTALLED":"READY";
-      $("#systemDetail").textContent="PWA + offline cache";
-    }catch(e){
-      $("#systemState").textContent="ONLINE";
-      $("#systemDetail").textContent="Browser mode";
-    }
-  });
-}
+if("serviceWorker" in navigator){window.addEventListener("load",async()=>{try{const registration=await navigator.serviceWorker.register("./sw.js",{scope:"./"});await registration.update();$("#systemState").textContent=isStandalone()?"INSTALLED":"READY";$("#systemDetail").textContent="PWA + offline cache"}catch(e){$("#systemState").textContent="ONLINE";$("#systemDetail").textContent="Browser mode"}})}
 
 function updateSpeed(){$("#speed").textContent=Math.round(speed);$("#driveState").textContent=speed>2?"DRIVING":"PARKED"}
 setInterval(()=>{speed=navActive?Math.min(62,speed+Math.random()*5):Math.max(0,speed-Math.random()*4);updateSpeed()},1200);
@@ -65,14 +40,28 @@ $("#next").onclick=()=>$("#trackTitle").textContent="Next Track";
 $("#back10").onclick=()=>$("#progress").value=Math.max(0,+$("#progress").value-10);
 $("#vol").onclick=()=>show("Volume","<p>Use your device's system volume controls.</p>");
 
+function launch(url,fallback){
+  let changed=false;
+  try{window.location.href=url;changed=true}catch(e){}
+  if(fallback)setTimeout(()=>{if(!document.hidden)window.location.href=fallback},1000);
+  return changed;
+}
+
 function openMaps(query){
   const q=query?encodeURIComponent(query):"";
   const geo=q?`geo:0,0?q=${q}`:"geo:0,0";
   const web=q?`https://www.google.com/maps/search/?api=1&query=${q}`:"https://www.google.com/maps/";
-  let launched=false;
-  try{window.location.href=geo;launched=true}catch(e){}
-  setTimeout(()=>{if(!document.hidden)window.location.href=web},800);
+  launch(geo,web);
 }
+
+function openMusic(){
+  launch("spotify:","https://open.spotify.com/");
+}
+
+function openWeather(){
+  launch("https://www.google.com/search?q=weather","https://weather.com/");
+}
+
 $("#navigateBtn").onclick=()=>{navActive=!navActive;$("#navigateBtn").textContent=navActive?"Stop navigation":"Start navigation";updateSpeed()};
 $("#destinationBtn").onclick=()=>{show("Set destination",'<label>Destination</label><input id="dest" placeholder="Enter a place" autocomplete="street-address"><button class="action" id="saveDest">Open in Maps</button>');setTimeout(()=>$("#saveDest").onclick=()=>{const v=$("#dest").value.trim();if(v){$("#locationLabel").textContent="Route to "+v;closeModal();openMaps(v)}},0)};
 $("#locBtn").onclick=()=>{if(!navigator.geolocation){$("#locationLabel").textContent="GPS not supported";return}navigator.geolocation.getCurrentPosition(p=>{$("#locationLabel").textContent=`GPS ${p.coords.latitude.toFixed(4)}, ${p.coords.longitude.toFixed(4)}`;openMaps(`${p.coords.latitude},${p.coords.longitude}`)},()=>$("#locationLabel").textContent="GPS permission unavailable",{enableHighAccuracy:true,timeout:10000,maximumAge:10000})};
@@ -84,13 +73,20 @@ function closeModal(){$("#modal").classList.remove("show")}
 $("#closeModal").onclick=closeModal;
 $("#modal").onclick=e=>{if(e.target===$("#modal"))closeModal()};
 
-function openMusic(){
-  try{window.location.href="spotify:"}catch(e){}
-  setTimeout(()=>{if(!document.hidden)window.location.href="https://open.spotify.com/"},800)
+function openApp(app){
+  if(app==="Maps"){openMaps("");return}
+  if(app==="Music"){openMusic();return}
+  if(app==="Weather"){openWeather();return}
+  if(app==="Browser"){launch("https://www.google.com/","https://www.google.com/");return}
+  if(app==="Clock"){show("Clock",`<p style="font-size:44px;font-weight:800;text-align:center">${new Date().toLocaleTimeString()}</p>`);return}
+  if(app==="Settings"){show("Settings","<p>Use the ☀ button for Light/Dark mode.</p><button class=\"action\" id=\"settingsTheme\">Toggle theme</button>");setTimeout(()=>$("#settingsTheme").onclick=()=>{$("#themeBtn").click();closeModal()},0);return}
+  show(app,"<p>App unavailable.</p>");
 }
-function openApp(app){const pages={Maps:'<p>Open an installed navigation app.</p><button class="action" id="modalMaps">Open Maps</button>',Music:'<p>Open your installed music app.</p><button class="action" id="modalMusic">Open Music</button>',Weather:'<p>Live weather requires an internet weather service.</p>',Settings:'<p>Theme and installation controls are available.</p>',Clock:`<p style="font-size:44px;font-weight:800">${new Date().toLocaleTimeString()}</p>`,Browser:'<p>Use your browser normally; this dashboard can also be installed as an app.</p>'};show(app,pages[app]||"<p>App unavailable</p>");if(app==="Maps")setTimeout(()=>$("#modalMaps").onclick=()=>openMaps(""),0);if(app==="Music")setTimeout(()=>$("#modalMusic").onclick=openMusic,0)}
-$$('.app-grid button').forEach(b=>b.onclick=()=>openApp(b.dataset.app));
+
+$$('.app-grid button').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();openApp(b.dataset.app)}));
 $("#musicOpen").onclick=openMusic;
-$("#allAppsBtn").onclick=()=>show("All Apps","<p>Maps · Music · Weather · Settings · Clock · Browser</p>");
+$("#allAppsBtn").onclick=()=>show("All Apps",'<div class="app-grid"><button data-app="Maps">⌖<span>Maps</span></button><button data-app="Music">♫<span>Music</span></button><button data-app="Weather">☁<span>Weather</span></button><button data-app="Settings">⚙<span>Settings</span></button><button data-app="Clock">◷<span>Clock</span></button><button data-app="Browser">◎<span>Browser</span></button></div>');
+$("#modal").addEventListener("click",e=>{const b=e.target.closest("[data-app]");if(b)openApp(b.dataset.app)});
+
 $$('.bottom-nav button').forEach(b=>b.onclick=()=>{$$('.bottom-nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');const p=b.dataset.page;if(p==='settings')openApp('Settings');else document.querySelector(p==='media'?'.media':p==='apps'?'.apps':p==='maps'?'.nav-card':'.dashboard').scrollIntoView({behavior:'smooth'})});
 window.addEventListener('deviceorientation',e=>{if(typeof e.alpha==='number'){heading=Math.round(e.alpha);$("#heading").textContent=`Heading ${heading}°`;$("#needle").style.transform=`rotate(${heading}deg)`}});
