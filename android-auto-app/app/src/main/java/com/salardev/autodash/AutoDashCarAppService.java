@@ -1,5 +1,6 @@
 package com.salardev.autodash;
 
+import android.content.Intent;
 import androidx.annotation.NonNull;
 import androidx.car.app.CarAppService;
 import androidx.car.app.CarContext;
@@ -49,11 +50,11 @@ public class AutoDashCarAppService extends CarAppService {
                             .build())
                     .addRow(new Row.Builder()
                             .setTitle("Media")
-                            .addText("Open your supported audio controls")
+                            .addText("Audio controls are handled by Android Auto")
                             .build())
                     .addAction(new Action.Builder()
-                            .setTitle("Open AutoDash")
-                            .setOnClickListener(() -> invalidate())
+                            .setTitle("Refresh")
+                            .setOnClickListener(this::invalidate)
                             .build())
                     .build();
 
