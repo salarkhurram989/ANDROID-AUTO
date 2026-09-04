@@ -9,22 +9,22 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="AutoDash">
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icon.svg">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./icon.svg">
 <title>AutoDash — Standalone Car Dashboard</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="./style.css">
 </head>
 <body>
 <div id="app">
-<header class="topbar"><div class="brand"><span class="brand-dot"></span>AutoDash</div><div class="top-status"><span>OFFLINE READY</span><span id="clock">--:--</span><button class="icon-btn" id="installBtn" hidden>Install</button><button class="icon-btn" id="themeBtn">☀</button></div></header>
+<header class="topbar"><div class="brand"><span class="brand-dot"></span>AutoDash</div><div class="top-status"><span>OFFLINE READY</span><span id="clock">--:--</span><button class="icon-btn" id="installBtn">Install</button><button class="icon-btn" id="themeBtn">☀</button></div></header>
 <main class="dashboard">
 <section class="hero card"><div><div class="eyebrow">STANDALONE DRIVE MODE</div><div class="speed-row"><span id="speed">0</span><small>km/h</small></div><div class="drive-status"><span class="pulse"></span><span id="driveState">PARKED</span></div></div><div class="compass"><div class="compass-ring"><span>N</span><span>E</span><span>S</span><span>W</span><div id="needle">▲</div></div><small id="heading">Heading 0°</small></div></section>
 <section class="card media"><div class="card-head"><span>♫ NOW PLAYING</span><button class="small-btn" id="musicOpen">Music</button></div><div class="track"><div class="album">♪</div><div class="track-info"><strong id="trackTitle">Local Drive</strong><span>Offline Player</span></div><button class="play" id="playBtn">▶</button></div><input id="progress" type="range" min="0" max="100" value="32"><div class="media-controls"><button id="prev">◀◀</button><button id="back10">−10</button><button id="next">▶▶</button><button id="vol">🔊</button></div></section>
 <section class="card nav-card"><div class="card-head"><span>⌖ NAVIGATION</span><button class="small-btn" id="locBtn">Use GPS</button></div><div class="map"><div class="road r1"></div><div class="road r2"></div><div class="road r3"></div><div class="route"></div><div class="you">●</div><div class="map-label" id="locationLabel">Location unavailable</div></div><div class="nav-actions"><button id="navigateBtn">Start navigation</button><button id="destinationBtn">Set destination</button></div></section>
-<section class="widgets"><div class="card widget"><span class="widget-icon">☁</span><div><small>WEATHER</small><strong>Offline</strong><span>Live data needs internet</span></div></div><div class="card widget"><span class="widget-icon">◷</span><div><small>TRIP</small><strong id="trip">0.0 km</strong><span id="tripTime">00:00</span></div></div><div class="card widget"><span class="widget-icon">🔋</span><div><small>BATTERY</small><strong id="battery">—</strong><span id="batteryState">Browser</span></div></div><div class="card widget"><span class="widget-icon">⚙</span><div><small>SYSTEM</small><strong id="systemState">READY</strong><span id="systemDetail">PWA dashboard</span></div></div></section>
+<section class="widgets"><div class="card widget"><span class="widget-icon">☁</span><div><small>WEATHER</small><strong>Offline</strong><span>Live data needs internet</span></div></div><div class="card widget"><span class="widget-icon">◷</span><div><small>TRIP</small><strong id="trip">0.0 km</strong><span id="tripTime">00:00</span></div></div><div class="card widget"><span class="widget-icon">🔋</span><div><small>BATTERY</small><strong id="battery">—</strong><span id="batteryState">Browser</span></div></div><div class="card widget"><span class="widget-icon">⚙</span><div><small>SYSTEM</small><strong id="systemState">READY</strong><span id="systemDetail">Checking app support…</span></div></div></section>
 <section class="apps card"><div class="card-head"><span>APP SHORTCUTS</span><button class="small-btn" id="allAppsBtn">All apps</button></div><div class="app-grid"><button data-app="Maps">⌖<span>Maps</span></button><button data-app="Music">♫<span>Music</span></button><button data-app="Weather">☁<span>Weather</span></button><button data-app="Settings">⚙<span>Settings</span></button><button data-app="Clock">◷<span>Clock</span></button><button data-app="Browser">◎<span>Browser</span></button></div></section>
 </main>
 <nav class="bottom-nav"><button class="active" data-page="home">⌂<span>Home</span></button><button data-page="maps">⌖<span>Maps</span></button><button data-page="media">♫<span>Media</span></button><button data-page="apps">▦<span>Apps</span></button><button data-page="settings">⚙<span>Settings</span></button></nav>
-</div><div class="modal" id="modal"><div class="modal-box"><button class="close" id="closeModal">×</button><h2 id="modalTitle">AutoDash</h2><div id="modalContent"></div></div></div><script src="script.js"></script>
+</div><div class="modal" id="modal"><div class="modal-box"><button class="close" id="closeModal">×</button><h2 id="modalTitle">AutoDash</h2><div id="modalContent"></div></div></div><script src="./script.js"></script>
 </body></html>
