@@ -3,19 +3,32 @@
   "name": "AutoDash — Android Auto Style Dashboard",
   "short_name": "AutoDash",
   "description": "A standalone Android Auto-style dashboard with navigation, media controls and car widgets.",
-  "start_url": "/ANDROID-AUTO/?source=pwa",
-  "scope": "/ANDROID-AUTO/",
+  "start_url": "./?source=pwa",
+  "scope": "./",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "any",
   "background_color": "#080a0d",
   "theme_color": "#0b0d10",
   "prefer_related_applications": false,
   "icons": [
     {
-      "src": "icon.svg",
-      "sizes": "any",
+      "src": "./icon.svg",
+      "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Maps",
+      "short_name": "Maps",
+      "url": "./#maps"
+    },
+    {
+      "name": "Music",
+      "short_name": "Music",
+      "url": "./#media"
     }
   ]
 }
