@@ -14,6 +14,17 @@
 <link rel="apple-touch-icon" href="./icon.svg">
 <title>AutoDash — Standalone Car Dashboard</title>
 <link rel="stylesheet" href="./style.css">
+<style>
+html,body{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+button,.app-grid button,.bottom-nav button,.icon-btn,.small-btn,.play,.nav-actions button,.media-controls button{min-height:44px;touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+button:active{transform:scale(.97);opacity:.82}
+.dashboard{-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain}
+.app-grid button{min-height:76px;padding:14px 8px}
+.bottom-nav button{min-height:58px}
+.modal{touch-action:manipulation}
+.modal-box{max-height:90vh;overflow:auto;-webkit-overflow-scrolling:touch}
+.modal-box input,.modal-box .action{min-height:44px}
+</style>
 </head>
 <body>
 <div id="app">
