@@ -11,6 +11,8 @@
     <application
         android:theme="@style/Theme.AutoDash"
         android:label="AutoDash"
+        android:icon="@drawable/ic_autodash"
+        android:roundIcon="@drawable/ic_autodash"
         android:usesCleartextTraffic="false"
         android:allowBackup="false"
         android:supportsRtl="true">
