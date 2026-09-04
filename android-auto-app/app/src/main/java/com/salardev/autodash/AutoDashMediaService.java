@@ -10,17 +10,17 @@ import androidx.annotation.Nullable;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.MediaMetadata;
 import androidx.media3.common.Player;
+import androidx.media3.common.util.UnstableApi;
 import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.session.LibraryResult;
 import androidx.media3.session.MediaLibraryService;
 import androidx.media3.session.MediaSession;
-import androidx.media3.session.MediaSessionService;
-import androidx.media3.session.LibraryResult;
-import androidx.media3.common.util.UnstableApi;
 
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.Executors;
 
 @UnstableApi
@@ -47,8 +47,7 @@ public class AutoDashMediaService extends MediaLibraryService {
                     MediaStore.Audio.Media._ID,
                     MediaStore.Audio.Media.TITLE,
                     MediaStore.Audio.Media.ARTIST,
-                    MediaStore.Audio.Media.ALBUM,
-                    MediaStore.Audio.Media.DURATION
+                    MediaStore.Audio.Media.ALBUM
             };
             String selection = MediaStore.Audio.Media.IS_MUSIC + " != 0";
             try (Cursor cursor = resolver.query(collection, projection, selection, null,
@@ -58,13 +57,11 @@ public class AutoDashMediaService extends MediaLibraryService {
                     int titleCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE);
                     int artistCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST);
                     int albumCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM);
-                    int durationCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION);
                     while (cursor.moveToNext()) {
                         long id = cursor.getLong(idCol);
                         String title = cursor.getString(titleCol);
                         String artist = cursor.getString(artistCol);
                         String album = cursor.getString(albumCol);
-                        long duration = cursor.getLong(durationCol);
                         Uri uri = ContentUris.withAppendedId(collection, id);
                         MediaMetadata metadata = new MediaMetadata.Builder()
                                 .setTitle(title == null || title.isEmpty() ? "Unknown track" : title)
@@ -72,13 +69,16 @@ public class AutoDashMediaService extends MediaLibraryService {
                                 .setAlbumTitle(album == null ? "" : album)
                                 .setIsBrowsable(false)
                                 .setIsPlayable(true)
-                                .setDurationMs(duration)
                                 .build();
-                        result.add(new MediaItem.Builder().setMediaId(uri.toString()).setUri(uri).setMediaMetadata(metadata).build());
+                        result.add(new MediaItem.Builder()
+                                .setMediaId(uri.toString())
+                                .setUri(uri)
+                                .setMediaMetadata(metadata)
+                                .build());
                     }
                 }
             } catch (SecurityException ignored) {
-                // Permission can be granted after service startup; the next client request will retry.
+                // The phone activity requests the required media permission.
             }
             synchronized (library) {
                 library.clear();
@@ -97,9 +97,7 @@ public class AutoDashMediaService extends MediaLibraryService {
 
     @Override
     public void onTaskRemoved(@Nullable android.content.Intent rootIntent) {
-        if (player != null && !player.getPlayWhenReady()) {
-            stopSelf();
-        }
+        if (player != null && !player.getPlayWhenReady()) stopSelf();
         super.onTaskRemoved(rootIntent);
     }
 
@@ -116,18 +114,36 @@ public class AutoDashMediaService extends MediaLibraryService {
         super.onDestroy();
     }
 
+    private List<MediaItem> matching(String query) {
+        String q = query == null ? "" : query.toLowerCase(Locale.ROOT);
+        List<MediaItem> matches = new ArrayList<>();
+        synchronized (library) {
+            for (MediaItem item : library) {
+                CharSequence title = item.mediaMetadata.title;
+                CharSequence artist = item.mediaMetadata.artist;
+                if (q.isEmpty() ||
+                        (title != null && title.toString().toLowerCase(Locale.ROOT).contains(q)) ||
+                        (artist != null && artist.toString().toLowerCase(Locale.ROOT).contains(q))) {
+                    matches.add(item);
+                }
+            }
+        }
+        return matches;
+    }
+
     private final class LibraryCallback implements MediaLibrarySession.Callback {
         @Override
         public LibraryResult<MediaItem> onGetLibraryRoot(MediaLibrarySession session,
                                                           MediaSession.ControllerInfo browser,
                                                           MediaLibraryService.LibraryParams params) {
-            MediaMetadata rootMetadata = new MediaMetadata.Builder()
+            MediaMetadata metadata = new MediaMetadata.Builder()
                     .setTitle("AutoDash Music")
                     .setIsBrowsable(true)
                     .setIsPlayable(false)
                     .build();
-            MediaItem root = new MediaItem.Builder().setMediaId("ROOT").setMediaMetadata(rootMetadata).build();
-            return LibraryResult.ofItem(root, params);
+            return LibraryResult.ofItem(
+                    new MediaItem.Builder().setMediaId("ROOT").setMediaMetadata(metadata).build(),
+                    params);
         }
 
         @Override
@@ -137,17 +153,11 @@ public class AutoDashMediaService extends MediaLibraryService {
                                                                       int page,
                                                                       int pageSize,
                                                                       MediaLibraryService.LibraryParams params) {
-            if (!"ROOT".equals(parentId)) {
-                return LibraryResult.ofItemList(ImmutableList.of(), params);
-            }
+            if (!"ROOT".equals(parentId)) return LibraryResult.ofItemList(ImmutableList.of(), params);
             List<MediaItem> snapshot;
-            synchronized (library) {
-                snapshot = new ArrayList<>(library);
-            }
+            synchronized (library) { snapshot = new ArrayList<>(library); }
             int from = page * pageSize;
-            if (from >= snapshot.size()) {
-                return LibraryResult.ofItemList(ImmutableList.of(), params);
-            }
+            if (from >= snapshot.size()) return LibraryResult.ofItemList(ImmutableList.of(), params);
             int to = Math.min(snapshot.size(), from + pageSize);
             return LibraryResult.ofItemList(ImmutableList.copyOf(snapshot.subList(from, to)), params);
         }
@@ -158,9 +168,7 @@ public class AutoDashMediaService extends MediaLibraryService {
                                                    String mediaId) {
             synchronized (library) {
                 for (MediaItem item : library) {
-                    if (item.mediaId.equals(mediaId)) {
-                        return LibraryResult.ofItem(item);
-                    }
+                    if (item.mediaId.equals(mediaId)) return LibraryResult.ofItem(item);
                 }
             }
             return LibraryResult.ofError(LibraryResult.RESULT_ERROR_BAD_VALUE);
@@ -171,19 +179,7 @@ public class AutoDashMediaService extends MediaLibraryService {
                              MediaSession.ControllerInfo browser,
                              String query,
                              MediaLibraryService.LibraryParams params) {
-            String q = query == null ? "" : query.toLowerCase();
-            List<MediaItem> matches = new ArrayList<>();
-            synchronized (library) {
-                for (MediaItem item : library) {
-                    CharSequence title = item.mediaMetadata.title;
-                    CharSequence artist = item.mediaMetadata.artist;
-                    if ((title != null && title.toString().toLowerCase().contains(q)) ||
-                            (artist != null && artist.toString().toLowerCase().contains(q))) {
-                        matches.add(item);
-                    }
-                }
-            }
-            session.notifySearchResultChanged(browser, query, matches.size(), params);
+            session.notifySearchResultChanged(browser, query, matching(query).size(), params);
         }
 
         @Override
@@ -193,18 +189,7 @@ public class AutoDashMediaService extends MediaLibraryService {
                                                                           int page,
                                                                           int pageSize,
                                                                           MediaLibraryService.LibraryParams params) {
-            String q = query == null ? "" : query.toLowerCase();
-            List<MediaItem> matches = new ArrayList<>();
-            synchronized (library) {
-                for (MediaItem item : library) {
-                    CharSequence title = item.mediaMetadata.title;
-                    CharSequence artist = item.mediaMetadata.artist;
-                    if ((title != null && title.toString().toLowerCase().contains(q)) ||
-                            (artist != null && artist.toString().toLowerCase().contains(q))) {
-                        matches.add(item);
-                    }
-                }
-            }
+            List<MediaItem> matches = matching(query);
             int from = page * pageSize;
             if (from >= matches.size()) return LibraryResult.ofItemList(ImmutableList.of(), params);
             int to = Math.min(matches.size(), from + pageSize);
